@@ -13,11 +13,36 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     quantity INTEGER NOT NULL,
+    partNumber TEXT,
+    description TEXT,
     category TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )
 `);
+
+// Add new columns if they don't exist (for migration)
+// Check if columns exist before adding
+const tableInfo = db.prepare("PRAGMA table_info(items)").all();
+const columnNames = tableInfo.map((col) => col.name);
+
+if (!columnNames.includes("partNumber")) {
+  try {
+    db.exec(`ALTER TABLE items ADD COLUMN partNumber TEXT`);
+    console.log("Added partNumber column to database");
+  } catch (e) {
+    console.error("Failed to add partNumber column:", e.message);
+  }
+}
+
+if (!columnNames.includes("description")) {
+  try {
+    db.exec(`ALTER TABLE items ADD COLUMN description TEXT`);
+    console.log("Added description column to database");
+  } catch (e) {
+    console.error("Failed to add description column:", e.message);
+  }
+}
 
 export const getAllItems = () => {
   const stmt = db.prepare("SELECT * FROM items ORDER BY created_at DESC");
@@ -29,19 +54,45 @@ export const getItemById = (id) => {
   return stmt.get(id);
 };
 
-export const createItem = (name, quantity, category) => {
+export const createItem = (
+  name,
+  quantity,
+  partNumber,
+  description,
+  category,
+) => {
   const stmt = db.prepare(
-    "INSERT INTO items (name, quantity, category) VALUES (?, ?, ?)",
+    "INSERT INTO items (name, quantity, partNumber, description, category) VALUES (?, ?, ?, ?, ?)",
   );
-  const result = stmt.run(name, quantity, category || null);
+  const result = stmt.run(
+    name,
+    quantity,
+    partNumber || null,
+    description || null,
+    category || null,
+  );
   return getItemById(result.lastInsertRowid);
 };
 
-export const updateItem = (id, name, quantity, category) => {
+export const updateItem = (
+  id,
+  name,
+  quantity,
+  partNumber,
+  description,
+  category,
+) => {
   const stmt = db.prepare(
-    "UPDATE items SET name = ?, quantity = ?, category = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+    "UPDATE items SET name = ?, quantity = ?, partNumber = ?, description = ?, category = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
   );
-  stmt.run(name, quantity, category || null, id);
+  stmt.run(
+    name,
+    quantity,
+    partNumber || null,
+    description || null,
+    category || null,
+    id,
+  );
   return getItemById(id);
 };
 

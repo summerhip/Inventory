@@ -45,13 +45,19 @@ app.get("/api/items/:id", (req, res) => {
 // Create new item
 app.post("/api/items", (req, res) => {
   try {
-    const { name, quantity, category } = req.body;
+    const { name, quantity, partNumber, description, category } = req.body;
 
     if (!name || quantity === undefined) {
       return res.status(400).json({ error: "Name and quantity are required" });
     }
 
-    const newItem = createItem(name, quantity, category);
+    const newItem = createItem(
+      name,
+      quantity,
+      partNumber,
+      description,
+      category,
+    );
     res.status(201).json(newItem);
   } catch (error) {
     console.error("Error creating item:", error);
@@ -62,7 +68,7 @@ app.post("/api/items", (req, res) => {
 // Update item
 app.put("/api/items/:id", (req, res) => {
   try {
-    const { name, quantity, category } = req.body;
+    const { name, quantity, partNumber, description, category } = req.body;
     const { id } = req.params;
 
     if (!name || quantity === undefined) {
@@ -74,7 +80,14 @@ app.put("/api/items/:id", (req, res) => {
       return res.status(404).json({ error: "Item not found" });
     }
 
-    const updatedItem = updateItem(id, name, quantity, category);
+    const updatedItem = updateItem(
+      id,
+      name,
+      quantity,
+      partNumber,
+      description,
+      category,
+    );
     res.json(updatedItem);
   } catch (error) {
     console.error("Error updating item:", error);
