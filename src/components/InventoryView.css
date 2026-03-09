@@ -111,9 +111,9 @@ button:disabled {
   padding: 2rem;
   border-radius: 10px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  max-height: calc(100vh - 450px);
   display: flex;
   flex-direction: column;
+  min-height: 600px;
 }
 
 .inventory-table-container h2 {
@@ -121,6 +121,35 @@ button:disabled {
   color: #333;
   margin-bottom: 1.5rem;
   flex-shrink: 0;
+}
+
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.table-header > div {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.table-header h2 {
+  margin: 0;
+}
+
+.table-count {
+  color: #999;
+  font-size: 0.9rem;
+  font-weight: 400;
+}
+
+.toolbar-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
 }
 
 .empty-message {
@@ -209,23 +238,27 @@ button:disabled {
 .icon-btn {
   background: none;
   border: none;
-  padding: 0.25rem;
+  padding: 0.5rem 0.75rem;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 0.4rem;
   transition: opacity 0.2s;
-  width: 28px;
-  height: 28px;
+  border-radius: 5px;
+  font-size: 0.9rem;
+  font-weight: 500;
 }
 
 .icon-btn svg {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
 }
 
 .icon-btn:hover:not(:disabled) {
   opacity: 0.7;
+  background: rgba(0, 0, 0, 0.05);
 }
 
 .icon-btn:disabled {
@@ -240,11 +273,19 @@ button:disabled {
   stroke-linejoin: round;
 }
 
+.btn-edit-icon {
+  color: #667eea;
+}
+
 .btn-delete-icon svg {
   stroke: #f56565;
   stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+.btn-delete-icon {
+  color: #f56565;
 }
 
 .btn-save-icon svg {
@@ -259,4 +300,213 @@ button:disabled {
   stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+.btn-add-icon {
+  padding: 0.5rem 0.75rem;
+  background: #667eea;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  transition: all 0.2s;
+  color: white;
+  font-weight: 500;
+}
+
+.btn-add-icon svg {
+  stroke: white;
+  width: 18px;
+  height: 18px;
+}
+
+.btn-add-icon:hover:not(:disabled) {
+  background: #5568d3;
+  transform: translateY(-1px);
+  opacity: 1;
+}
+
+.btn-refresh-icon svg {
+  stroke: #48bb78;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.btn-refresh-icon {
+  color: #48bb78;
+}
+
+/* Dialog/Modal Styles */
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.dialog-content {
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  animation: slideIn 0.2s;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.dialog-header h2 {
+  margin: 0;
+  color: #333;
+  font-size: 1.5rem;
+}
+
+.dialog-close {
+  background: none;
+  border: none;
+  padding: 0.25rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  transition: background 0.2s;
+}
+
+.dialog-close svg {
+  width: 20px;
+  height: 20px;
+  stroke: #666;
+  stroke-width: 2;
+}
+
+.dialog-close:hover {
+  background: #f0f0f0;
+}
+
+.dialog-form {
+  padding: 1.5rem;
+}
+
+.dialog-form .form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.dialog-form .button-group {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+
+/* AG-Grid Custom Styles */
+.ag-theme-alpine {
+  --ag-borders: solid 1px #e9ecef;
+  --ag-row-hover-color: #f8f9fa;
+  --ag-header-background-color: #f8f9fa;
+  --ag-header-foreground-color: #495057;
+  --ag-font-size: 0.95rem;
+  --ag-font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.ag-theme-alpine .ag-header-cell-label {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+}
+
+.ag-theme-alpine .ag-row {
+  border-bottom: 1px solid #e9ecef;
+}
+
+.ag-theme-alpine .ag-cell {
+  display: flex;
+  align-items: center;
+}
+
+/* Make sure icon buttons in ag-grid cells look good */
+.ag-theme-alpine .icon-btn {
+  margin: 0;
+}
+
+/* Custom Context Menu */
+.custom-context-menu {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 160px;
+  padding: 4px 0;
+  z-index: 10000;
+}
+
+.context-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
+}
+
+.context-menu-item:hover {
+  background-color: #f5f5f5;
+}
+
+.context-menu-item svg {
+  width: 16px;
+  height: 16px;
+  stroke: #667eea;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex-shrink: 0;
+}
+
+.context-menu-delete svg {
+  stroke: #f56565;
 }

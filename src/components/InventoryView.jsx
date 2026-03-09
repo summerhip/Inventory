@@ -1,9 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { AgGridReact } from "ag-grid-react";
+import "ag-grid-community/styles/ag-grid.css";
+import "ag-grid-community/styles/ag-theme-alpine.css";
 import "./InventoryView.css";
+import NewItemDialog from "./NewItemDialog";
 
 const API_URL = "http://localhost:3000/api";
 
-function InventoryView() {
+const InventoryView = () => {
   const [items, setItems] = useState([]);
   const [formData, setFormData] = useState({
     name: "",
@@ -12,19 +16,33 @@ function InventoryView() {
     stock: "",
   });
   const [editingId, setEditingId] = useState(null);
-  const [editFormData, setEditFormData] = useState({
-    name: "",
-    partNumber: "",
-    description: "",
-    stock: "",
-  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedRows, setSelectedRows] = useState([]);
+  const [contextMenu, setContextMenu] = useState({
+    visible: false,
+    x: 0,
+    y: 0,
+    clickedItem: null,
+  });
+  const gridRef = useRef(null);
 
   // Fetch items on component mount
   useEffect(() => {
     fetchItems();
   }, []);
+
+  // Close context menu on outside click
+  useEffect(() => {
+    const handleClickOutside = () => {
+      if (contextMenu.visible) {
+        setContextMenu({ ...contextMenu, visible: false });
+      }
+    };
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, [contextMenu.visible]);
 
   const fetchItems = async () => {
     try {
@@ -62,25 +80,54 @@ function InventoryView() {
     setError(null);
 
     try {
-      // Add new item
-      const response = await fetch(`${API_URL}/items`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: formData.name,
-          partNumber: formData.partNumber,
-          description: formData.description,
-          quantity: Number(formData.stock),
-        }),
-      });
+      if (editingId) {
+        // Update existing item
+        const response = await fetch(`${API_URL}/items/${editingId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: formData.name,
+            partNumber: formData.partNumber,
+            description: formData.description,
+            quantity: Number(formData.stock),
+          }),
+        });
 
-      if (!response.ok) throw new Error("Failed to create item");
+        if (!response.ok) throw new Error("Failed to update item");
 
-      const newItem = await response.json();
-      setItems([newItem, ...items]);
+        const updatedItem = await response.json();
+        setItems(
+          items.map((item) => (item.id === editingId ? updatedItem : item)),
+        );
+      } else {
+        // Add new item
+        const response = await fetch(`${API_URL}/items`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: formData.name,
+            partNumber: formData.partNumber,
+            description: formData.description,
+            quantity: Number(formData.stock),
+          }),
+        });
 
-      // Reset form
+        if (!response.ok) throw new Error("Failed to create item");
+
+        const newItem = await response.json();
+        setItems([newItem, ...items]);
+      }
+
+      // Reset form and clear selection
       setFormData({ name: "", partNumber: "", description: "", stock: "" });
+      setEditingId(null);
+      setIsDialogOpen(false);
+      setSelectedRows([]);
+
+      // Clear selection in grid
+      if (gridRef.current) {
+        gridRef.current.api.deselectAll();
+      }
     } catch (err) {
       console.error("Error saving item:", err);
       setError("Failed to save item. Please try again.");
@@ -89,146 +136,243 @@ function InventoryView() {
     }
   };
 
-  const handleEdit = (item) => {
+  const handleEditSelected = () => {
+    if (selectedRows.length === 1) {
+      handleEditItem(selectedRows[0]);
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedRows.length === 0) return;
+    await handleDeleteItems(selectedRows);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setFormData({ name: "", partNumber: "", description: "", stock: "" });
+    setIsDialogOpen(false);
+  };
+
+  const handleDialogSubmit = (e) => {
+    handleSubmit(e);
+  };
+
+  const onSelectionChanged = () => {
+    if (gridRef.current) {
+      const selected = gridRef.current.api.getSelectedRows();
+      setSelectedRows(selected);
+    }
+  };
+
+  const handleEditItem = (item) => {
     setEditingId(item.id);
-    setEditFormData({
+    setFormData({
       name: item.name,
       partNumber: item.partNumber || "",
       description: item.description || "",
       stock: item.quantity.toString(),
     });
+    setIsDialogOpen(true);
   };
 
-  const handleEditInputChange = (e) => {
-    const { name, value } = e.target;
-    setEditFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+  const handleDeleteItems = async (itemsToDelete) => {
+    const count = itemsToDelete.length;
+    const confirmMessage =
+      count === 1
+        ? "Are you sure you want to delete this item?"
+        : `Are you sure you want to delete ${count} items?`;
 
-  const handleSaveEdit = async (id) => {
-    if (!editFormData.name || !editFormData.stock) {
-      alert("Please fill in item name and stock");
-      return;
-    }
+    if (!confirm(confirmMessage)) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      const response = await fetch(`${API_URL}/items/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: editFormData.name,
-          partNumber: editFormData.partNumber,
-          description: editFormData.description,
-          quantity: Number(editFormData.stock),
-        }),
-      });
+      // Delete all items
+      await Promise.all(
+        itemsToDelete.map((item) =>
+          fetch(`${API_URL}/items/${item.id}`, {
+            method: "DELETE",
+          }),
+        ),
+      );
 
-      if (!response.ok) throw new Error("Failed to update item");
+      // Remove deleted items from state
+      const deletedIds = itemsToDelete.map((item) => item.id);
+      setItems(items.filter((item) => !deletedIds.includes(item.id)));
+      setSelectedRows([]);
 
-      const updatedItem = await response.json();
-      setItems(items.map((item) => (item.id === id ? updatedItem : item)));
-      setEditingId(null);
+      // Clear selection in grid
+      if (gridRef.current) {
+        gridRef.current.api.deselectAll();
+      }
     } catch (err) {
-      console.error("Error saving item:", err);
-      setError("Failed to save item. Please try again.");
+      console.error("Error deleting items:", err);
+      setError("Failed to delete items. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm("Are you sure you want to delete this item?")) return;
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await fetch(`${API_URL}/items/${id}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) throw new Error("Failed to delete item");
-
-      setItems(items.filter((item) => item.id !== id));
-    } catch (err) {
-      console.error("Error deleting item:", err);
-      setError("Failed to delete item. Please try again.");
-    } finally {
-      setLoading(false);
-    }
+  const handleCellContextMenu = (event) => {
+    event.event.preventDefault();
+    const clickedItem = event.data;
+    setContextMenu({
+      visible: true,
+      x: event.event.clientX,
+      y: event.event.clientY,
+      clickedItem,
+    });
   };
 
-  const handleCancelEdit = () => {
-    setEditingId(null);
-    setEditFormData({ name: "", partNumber: "", description: "", stock: "" });
+  const handleContextMenuEdit = () => {
+    const clickedItem = contextMenu.clickedItem;
+    const isClickedItemSelected = selectedRows.some(
+      (item) => item.id === clickedItem.id,
+    );
+    const itemsToAct = isClickedItemSelected ? selectedRows : [clickedItem];
+
+    if (itemsToAct.length === 1) {
+      handleEditItem(itemsToAct[0]);
+    }
+    setContextMenu({ ...contextMenu, visible: false });
+  };
+
+  const handleContextMenuDelete = () => {
+    const clickedItem = contextMenu.clickedItem;
+    const isClickedItemSelected = selectedRows.some(
+      (item) => item.id === clickedItem.id,
+    );
+    const itemsToAct = isClickedItemSelected ? selectedRows : [clickedItem];
+
+    handleDeleteItems(itemsToAct);
+    setContextMenu({ ...contextMenu, visible: false });
+  };
+
+  // Column definitions for ag-grid
+  const columnDefs = [
+    {
+      field: "name",
+      headerName: "Name",
+      flex: 1,
+      minWidth: 150,
+      checkboxSelection: true,
+      headerCheckboxSelection: true,
+    },
+    {
+      field: "partNumber",
+      headerName: "Part #",
+      flex: 1,
+      minWidth: 120,
+      valueFormatter: (params) => params.value || "-",
+    },
+    {
+      field: "description",
+      headerName: "Description",
+      flex: 1,
+      minWidth: 200,
+      valueFormatter: (params) => params.value || "-",
+    },
+    {
+      field: "quantity",
+      headerName: "Stock",
+      flex: 1,
+      minWidth: 100,
+    },
+  ];
+
+  const defaultColDef = {
+    sortable: true,
+    filter: true,
+    resizable: true,
   };
 
   return (
     <div className="inventory-view">
       <div className="container">
         {error && <div className="error-message">{error}</div>}
-
-        <form onSubmit={handleSubmit} className="add-form">
-          <h2>Add New Item</h2>
-          <div className="form-grid">
-            <div className="form-group">
-              <label>Name</label>
-              <input
-                type="text"
-                name="name"
-                placeholder="Item name"
-                value={formData.name}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>Part #</label>
-              <input
-                type="text"
-                name="partNumber"
-                placeholder="Part number"
-                value={formData.partNumber}
-                onChange={handleInputChange}
-              />
-            </div>
-            <div className="form-group">
-              <label>Description</label>
-              <input
-                type="text"
-                name="description"
-                placeholder="Description"
-                value={formData.description}
-                onChange={handleInputChange}
-              />
-            </div>
-            <div className="form-group">
-              <label>Stock</label>
-              <input
-                type="number"
-                name="stock"
-                placeholder="Stock quantity"
-                value={formData.stock}
-                onChange={handleInputChange}
-                min="0"
-                required
-              />
-            </div>
-          </div>
-          <div className="button-group">
-            <button type="submit" className="btn-primary" disabled={loading}>
-              {loading ? "Saving..." : "Add Item"}
-            </button>
-          </div>
-        </form>
-
         <div className="inventory-table-container">
-          <h2>Inventory Items</h2>
+          <div className="table-header">
+            <div>
+              <h2>Inventory Items</h2>
+              <span className="table-count">
+                {items.length} {items.length === 1 ? "item" : "items"}
+                {selectedRows.length > 0 &&
+                  ` (${selectedRows.length} selected)`}
+              </span>
+            </div>
+            <div className="toolbar-actions">
+              <button
+                onClick={handleEditSelected}
+                className="icon-btn btn-edit-icon"
+                title="Edit Selected"
+                disabled={selectedRows.length !== 1}
+              >
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                <span>Edit</span>
+              </button>
+              <button
+                onClick={handleDeleteSelected}
+                className="icon-btn btn-delete-icon"
+                title="Delete Selected"
+                disabled={selectedRows.length === 0}
+              >
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                <span>Delete</span>
+              </button>
+              <button
+                onClick={fetchItems}
+                className="icon-btn btn-refresh-icon"
+                title="Refresh"
+                disabled={loading}
+              >
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                <span>Refresh</span>
+              </button>
+              <button
+                onClick={() => setIsDialogOpen(true)}
+                className="icon-btn btn-add-icon"
+                title="Add Item"
+              >
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M12 5v14M5 12h14"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                <span>Add</span>
+              </button>
+            </div>
+          </div>
           {loading && items.length === 0 ? (
             <p className="empty-message">Loading items...</p>
           ) : items.length === 0 ? (
@@ -236,151 +380,109 @@ function InventoryView() {
               No items in inventory. Add your first item above!
             </p>
           ) : (
-            <table className="inventory-table">
-              <thead>
-                <tr>
-                  <th className="icon-col"></th>
-                  <th>Name</th>
-                  <th>Part #</th>
-                  <th>Description</th>
-                  <th>Stock</th>
-                  <th className="icon-col"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item) => (
-                  <tr key={item.id}>
-                    {editingId === item.id ? (
-                      <>
-                        <td className="icon-col">
-                          <button
-                            onClick={() => handleSaveEdit(item.id)}
-                            className="icon-btn btn-save-icon"
-                            disabled={loading}
-                            title="Save"
-                          >
-                            <svg viewBox="0 0 24 24" fill="none">
-                              <path
-                                d="M20 6L9 17l-5-5"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                            </svg>
-                          </button>
-                        </td>
-                        <td>
-                          <input
-                            type="text"
-                            name="name"
-                            value={editFormData.name}
-                            onChange={handleEditInputChange}
-                            className="table-input"
-                            required
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="text"
-                            name="partNumber"
-                            value={editFormData.partNumber}
-                            onChange={handleEditInputChange}
-                            className="table-input"
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="text"
-                            name="description"
-                            value={editFormData.description}
-                            onChange={handleEditInputChange}
-                            className="table-input"
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            name="stock"
-                            value={editFormData.stock}
-                            onChange={handleEditInputChange}
-                            className="table-input"
-                            min="0"
-                            required
-                          />
-                        </td>
-                        <td className="icon-col">
-                          <button
-                            onClick={handleCancelEdit}
-                            className="icon-btn btn-cancel-icon"
-                            disabled={loading}
-                            title="Cancel"
-                          >
-                            <svg viewBox="0 0 24 24" fill="none">
-                              <path
-                                d="M18 6L6 18M6 6l12 12"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                            </svg>
-                          </button>
-                        </td>
-                      </>
-                    ) : (
-                      <>
-                        <td className="icon-col">
-                          <button
-                            onClick={() => handleEdit(item)}
-                            className="icon-btn btn-edit-icon"
-                            title="Edit"
-                          >
-                            <svg viewBox="0 0 24 24" fill="none">
-                              <path
-                                d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                              <path
-                                d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                            </svg>
-                          </button>
-                        </td>
-                        <td>{item.name}</td>
-                        <td>{item.partNumber || "-"}</td>
-                        <td>{item.description || "-"}</td>
-                        <td>{item.quantity}</td>
-                        <td className="icon-col">
-                          <button
-                            onClick={() => handleDelete(item.id)}
-                            className="icon-btn btn-delete-icon"
-                            title="Delete"
-                          >
-                            <svg viewBox="0 0 24 24" fill="none">
-                              <path
-                                d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                            </svg>
-                          </button>
-                        </td>
-                      </>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div
+              className="ag-theme-alpine"
+              style={{
+                height: "500px",
+                width: "100%",
+              }}
+              onContextMenu={(e) => e.preventDefault()}
+            >
+              <AgGridReact
+                ref={gridRef}
+                rowData={items}
+                columnDefs={columnDefs}
+                defaultColDef={defaultColDef}
+                rowSelection="multiple"
+                suppressRowClickSelection={true}
+                onSelectionChanged={onSelectionChanged}
+                onCellContextMenu={handleCellContextMenu}
+                suppressCellFocus={true}
+              />
+            </div>
           )}
         </div>
+
+        {contextMenu.visible && (
+          <div
+            className="custom-context-menu"
+            style={{
+              position: "fixed",
+              top: contextMenu.y,
+              left: contextMenu.x,
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {(() => {
+              const clickedItem = contextMenu.clickedItem;
+              const isClickedItemSelected = selectedRows.some(
+                (item) => item.id === clickedItem?.id,
+              );
+              const itemsToAct = isClickedItemSelected
+                ? selectedRows
+                : [clickedItem];
+              const showEdit = itemsToAct.length === 1;
+
+              return (
+                <>
+                  {showEdit && (
+                    <div
+                      className="context-menu-item"
+                      onClick={handleContextMenuEdit}
+                    >
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path
+                          d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        <path
+                          d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                      <span>Edit</span>
+                    </div>
+                  )}
+                  <div
+                    className="context-menu-item context-menu-delete"
+                    onClick={handleContextMenuDelete}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none">
+                      <path
+                        d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                    <span>
+                      {itemsToAct.length > 1
+                        ? `Delete ${itemsToAct.length} items`
+                        : "Delete"}
+                    </span>
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        )}
+
+        <NewItemDialog
+          isOpen={isDialogOpen}
+          onClose={handleCancelEdit}
+          onSubmit={handleDialogSubmit}
+          formData={formData}
+          onInputChange={handleInputChange}
+          editingId={editingId}
+          loading={loading}
+        />
       </div>
     </div>
   );
-}
+};
 
 export default InventoryView;

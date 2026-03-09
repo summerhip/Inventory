@@ -1,7 +1,6 @@
-import React from "react";
 import "./TopNav.css";
 
-function TopNav() {
+const TopNav = () => {
   return (
     <nav className="top-nav">
       <div className="top-nav-left">
@@ -23,6 +22,6 @@ function TopNav() {
       </button>
     </nav>
   );
-}
+};
 
 export default TopNav;

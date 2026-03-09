@@ -12,6 +12,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "ag-grid-community": "^32.3.3",
+    "ag-grid-react": "^32.3.3",
     "better-sqlite3": "^12.6.2",
     "cors": "^2.8.6",
     "express": "^5.2.1",
