@@ -14,7 +14,7 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 const corsOptions = {
   origin: [
-    "https://summerhip.github.io/Inventory",
+    "https://summerhip.github.io",
     "http://localhost:5173",
     "http://localhost:3000",
   ],
