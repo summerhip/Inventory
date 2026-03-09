@@ -44,6 +44,10 @@
   stroke-linejoin: round;
 }
 
+.settings-container {
+  position: relative;
+}
+
 .settings-button {
   background: none;
   border: none;
@@ -66,4 +70,42 @@
   stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+.settings-dropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  background: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 150px;
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.settings-menu-item {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #2d3748;
+  transition: background-color 0.2s;
+}
+
+.settings-menu-item:hover {
+  background-color: #f7fafc;
+}
+
+.menu-item-icon {
+  width: 16px;
+  height: 16px;
+  stroke: #2d3748;
+  stroke-width: 2;
 }
