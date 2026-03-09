@@ -3,6 +3,9 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=20.19.0"
+  },
   "homepage": "https://summerhip.github.io/Inventory/",
   "scripts": {
     "dev": "concurrently \"npm run dev:client\" \"npm run dev:server\"",
