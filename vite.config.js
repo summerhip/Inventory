@@ -13,11 +13,11 @@ export default defineConfig({
       output: {
         manualChunks: {
           // Separate ag-grid into its own chunk
-          'ag-grid': ['ag-grid-react', 'ag-grid-community'],
+          "ag-grid": ["ag-grid-react", "ag-grid-community"],
           // React and ReactDOM in vendor chunk
-          'vendor': ['react', 'react-dom']
-        }
-      }
-    }
-  }
+          vendor: ["react", "react-dom"],
+        },
+      },
+    },
+  },
 });
