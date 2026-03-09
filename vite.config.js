@@ -8,4 +8,16 @@ export default defineConfig({
   optimizeDeps: {
     include: ["ag-grid-community", "ag-grid-react"],
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Separate ag-grid into its own chunk
+          'ag-grid': ['ag-grid-react', 'ag-grid-community'],
+          // React and ReactDOM in vendor chunk
+          'vendor': ['react', 'react-dom']
+        }
+      }
+    }
+  }
 });

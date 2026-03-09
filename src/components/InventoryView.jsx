@@ -5,7 +5,7 @@ import "ag-grid-community/styles/ag-theme-alpine.css";
 import "./InventoryView.css";
 import NewItemDialog from "./NewItemDialog";
 
-const API_URL = "http://localhost:3000/api";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
 const InventoryView = () => {
   const [items, setItems] = useState([]);
