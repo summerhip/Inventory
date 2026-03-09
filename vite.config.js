@@ -9,6 +9,7 @@ export default defineConfig({
     include: ["ag-grid-community", "ag-grid-react"],
   },
   build: {
+    chunkSizeWarningLimit: 1000, // Increase limit to 1000 kB for ag-grid
     rollupOptions: {
       output: {
         manualChunks: {
