@@ -1,12 +1,7 @@
 [build]
 builder = "NIXPACKS"
 
-[build.nixpacksPlan.phases.setup]
-nixPkgs = ["nodejs_20", "python3", "gcc", "gnumake"]
-
 [deploy]
 startCommand = "node server/index.js"
-healthcheckPath = "/api/health"
-healthcheckTimeout = 30
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
