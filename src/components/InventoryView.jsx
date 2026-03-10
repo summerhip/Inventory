@@ -26,7 +26,9 @@ const InventoryView = () => {
     y: 0,
     clickedItem: null,
   });
+  const [overflowMenuOpen, setOverflowMenuOpen] = useState(false);
   const gridRef = useRef(null);
+  const overflowMenuRef = useRef(null);
 
   // Fetch items on component mount
   useEffect(() => {
@@ -43,6 +45,21 @@ const InventoryView = () => {
     document.addEventListener("click", handleClickOutside);
     return () => document.removeEventListener("click", handleClickOutside);
   }, [contextMenu.visible]);
+
+  // Close overflow menu on outside click
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        overflowMenuOpen &&
+        overflowMenuRef.current &&
+        !overflowMenuRef.current.contains(event.target)
+      ) {
+        setOverflowMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [overflowMenuOpen]);
 
   const fetchItems = async () => {
     try {
@@ -302,75 +319,172 @@ const InventoryView = () => {
               </span>
             </div>
             <div className="toolbar-actions">
-              <button
-                onClick={handleEditSelected}
-                className="icon-btn btn-edit-icon"
-                title="Edit Selected"
-                disabled={selectedRows.length !== 1}
-              >
-                <svg viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                <span>Edit</span>
-              </button>
-              <button
-                onClick={handleDeleteSelected}
-                className="icon-btn btn-delete-icon"
-                title="Delete Selected"
-                disabled={selectedRows.length === 0}
-              >
-                <svg viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                <span>Delete</span>
-              </button>
-              <button
-                onClick={fetchItems}
-                className="icon-btn btn-refresh-icon"
-                title="Refresh"
-                disabled={loading}
-              >
-                <svg viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                <span>Refresh</span>
-              </button>
-              <button
-                onClick={() => setIsDialogOpen(true)}
-                className="icon-btn btn-add-icon"
-                title="Add Item"
-              >
-                <svg viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M12 5v14M5 12h14"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                <span>Add</span>
-              </button>
+              <div className="toolbar-actions-desktop">
+                <button
+                  onClick={handleEditSelected}
+                  className="icon-btn btn-edit-icon"
+                  title="Edit Selected"
+                  disabled={selectedRows.length !== 1}
+                >
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  <span>Edit</span>
+                </button>
+                <button
+                  onClick={handleDeleteSelected}
+                  className="icon-btn btn-delete-icon"
+                  title="Delete Selected"
+                  disabled={selectedRows.length === 0}
+                >
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  <span>Delete</span>
+                </button>
+                <button
+                  onClick={fetchItems}
+                  className="icon-btn btn-refresh-icon"
+                  title="Refresh"
+                  disabled={loading}
+                >
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  <span>Refresh</span>
+                </button>
+                <button
+                  onClick={() => setIsDialogOpen(true)}
+                  className="icon-btn btn-add-icon"
+                  title="Add Item"
+                >
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M12 5v14M5 12h14"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  <span>Add</span>
+                </button>
+              </div>
+              <div className="toolbar-actions-mobile" ref={overflowMenuRef}>
+                <button
+                  onClick={() => setIsDialogOpen(true)}
+                  className="icon-btn btn-add-icon"
+                  title="Add Item"
+                >
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M12 5v14M5 12h14"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => setOverflowMenuOpen(!overflowMenuOpen)}
+                  className="icon-btn btn-overflow"
+                  title="More Actions"
+                >
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="5" r="1" fill="currentColor" />
+                    <circle cx="12" cy="12" r="1" fill="currentColor" />
+                    <circle cx="12" cy="19" r="1" fill="currentColor" />
+                  </svg>
+                </button>
+                {overflowMenuOpen && (
+                  <div className="overflow-menu">
+                    <button
+                      onClick={() => {
+                        handleEditSelected();
+                        setOverflowMenuOpen(false);
+                      }}
+                      className="overflow-menu-item"
+                      disabled={selectedRows.length !== 1}
+                    >
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path
+                          d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        <path
+                          d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                      <span>Edit</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        handleDeleteSelected();
+                        setOverflowMenuOpen(false);
+                      }}
+                      className="overflow-menu-item overflow-menu-delete"
+                      disabled={selectedRows.length === 0}
+                    >
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path
+                          d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                      <span>Delete</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        fetchItems();
+                        setOverflowMenuOpen(false);
+                      }}
+                      className="overflow-menu-item"
+                      disabled={loading}
+                    >
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path
+                          d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                      <span>Refresh</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
           {loading && items.length === 0 ? (

@@ -5,13 +5,21 @@ import TopNav from "./components/TopNav";
 import LeftNav from "./components/LeftNav";
 import DashboardView from "./components/DashboardView";
 import InventoryView from "./components/InventoryView";
+import SalesView from "./components/SalesView";
 
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     return localStorage.getItem("isAuthenticated") === "true";
   });
   const [isLeftNavOpen, setIsLeftNavOpen] = useState(false);
-  const [currentView, setCurrentView] = useState("dashboard");
+  const [currentView, setCurrentView] = useState(() => {
+    return localStorage.getItem("currentView") || "dashboard";
+  });
+
+  // Save current view to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem("currentView", currentView);
+  }, [currentView]);
 
   const handleLogin = (username) => {
     setIsAuthenticated(true);
@@ -23,6 +31,7 @@ const App = () => {
     setIsAuthenticated(false);
     localStorage.removeItem("isAuthenticated");
     localStorage.removeItem("username");
+    localStorage.removeItem("currentView");
     setIsLeftNavOpen(false);
     setCurrentView("dashboard");
   };
@@ -45,6 +54,7 @@ const App = () => {
       />
       {currentView === "dashboard" && <DashboardView />}
       {currentView === "inventory" && <InventoryView />}
+      {currentView === "sales" && <SalesView />}
     </div>
   );
 };

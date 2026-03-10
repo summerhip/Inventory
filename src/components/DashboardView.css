@@ -55,7 +55,7 @@
 .card-header svg {
   width: 24px;
   height: 24px;
-  stroke: #667eea;
+  stroke: #99c2a2;
   opacity: 0.6;
 }
 
@@ -86,12 +86,94 @@
 
 .activity-list {
   min-height: 200px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .activity-list .empty-message {
   color: #999;
   font-style: italic;
+  text-align: center;
+  padding: 2rem;
+}
+
+.activity-items {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.activity-item {
+  display: flex;
+  gap: 1rem;
+  padding: 0.75rem;
+  border-radius: 8px;
+  transition: background 0.2s;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.activity-item:last-child {
+  border-bottom: none;
+}
+
+.activity-item:hover {
+  background: #f8f9fa;
+}
+
+.activity-icon {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: #dbfeb8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.activity-icon svg {
+  width: 20px;
+  height: 20px;
+  stroke: #99c2a2;
+  stroke-width: 2;
+}
+
+.activity-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.activity-main {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.activity-name {
+  font-weight: 600;
+  color: #333;
+  font-size: 0.95rem;
+}
+
+.activity-part {
+  font-size: 0.85rem;
+  color: #99c2a2;
+  font-weight: 600;
+}
+
+.activity-meta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.activity-quantity {
+  color: #48bb78;
+  font-weight: 500;
+}
+
+.activity-time {
+  color: #999;
 }

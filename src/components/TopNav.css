@@ -1,10 +1,10 @@
 .top-nav {
-  background-color: #8ca0d7;
+  background: linear-gradient(135deg, #99c2a2 0%, #7a918d 100%);
   padding: 1rem 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .top-nav-left {
@@ -17,28 +17,29 @@
   margin: 0;
   font-size: 1.5rem;
   font-weight: bold;
-  color: #2d3748;
+  color: white;
 }
 
 .menu-button {
-  background: none;
+  background: rgba(255, 255, 255, 0.15);
   border: none;
-  padding: 0;
+  padding: 0.5rem;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: opacity 0.2s;
+  transition: all 0.2s;
+  border-radius: 8px;
 }
 
 .menu-button:hover {
-  opacity: 0.7;
+  background: rgba(255, 255, 255, 0.25);
 }
 
 .menu-icon {
   width: 24px;
   height: 24px;
-  stroke: #2d3748;
+  stroke: white;
   stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -49,24 +50,25 @@
 }
 
 .settings-button {
-  background: none;
+  background: rgba(255, 255, 255, 0.15);
   border: none;
-  padding: 0;
+  padding: 0.5rem;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: opacity 0.2s;
+  transition: all 0.2s;
+  border-radius: 8px;
 }
 
 .settings-button:hover {
-  opacity: 0.7;
+  background: rgba(255, 255, 255, 0.25);
 }
 
 .settings-icon {
   width: 20px;
   height: 20px;
-  stroke: #2d3748;
+  stroke: white;
   stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -77,11 +79,23 @@
   top: calc(100% + 0.5rem);
   right: 0;
   background: white;
-  border-radius: 0.5rem;
+  border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   min-width: 150px;
   z-index: 1000;
   overflow: hidden;
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .settings-menu-item {
@@ -95,17 +109,19 @@
   align-items: center;
   gap: 0.5rem;
   font-size: 0.9rem;
-  color: #2d3748;
-  transition: background-color 0.2s;
+  font-weight: 500;
+  color: #333;
+  transition: all 0.2s;
 }
 
 .settings-menu-item:hover {
-  background-color: #f7fafc;
+  background-color: #f8f9fa;
+  color: #99c2a2;
 }
 
 .menu-item-icon {
   width: 16px;
   height: 16px;
-  stroke: #2d3748;
+  stroke: currentColor;
   stroke-width: 2;
 }

@@ -65,7 +65,7 @@ header h1 {
 
 .form-group input:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #99c2a2;
 }
 
 .button-group {
@@ -89,15 +89,15 @@ button:disabled {
 }
 
 .btn-primary {
-  background: #667eea;
+  background: #99c2a2;
   color: white;
   flex: 1;
 }
 
 .btn-primary:hover {
-  background: #5568d3;
+  background: #7a918d;
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 8px rgba(122, 145, 141, 0.3);
 }
 
 .btn-secondary {
@@ -146,7 +146,7 @@ button:disabled {
 .item-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
-  border-color: #667eea;
+  border-color: #99c2a2;
 }
 
 .item-header {
@@ -163,7 +163,7 @@ button:disabled {
 }
 
 .category {
-  background: #667eea;
+  background: #99c2a2;
   color: white;
   padding: 0.25rem 0.75rem;
   border-radius: 20px;

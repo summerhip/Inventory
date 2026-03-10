@@ -6,6 +6,10 @@ import {
   updateItem,
   deleteItem,
   getItemById,
+  sellItem,
+  sellMultipleItems,
+  getAllSoldItems,
+  getSoldItemsByOriginalId,
 } from "./db.js";
 
 process.on("uncaughtException", (err) => {
@@ -137,6 +141,82 @@ app.get("/api/health", (req, res) => {
   } catch (error) {
     console.error("Health check DB error:", error);
     res.status(500).json({ status: "error", message: error.message });
+  }
+});
+
+// Sell single item
+app.post("/api/items/:id/sell", (req, res) => {
+  try {
+    const { id } = req.params;
+    const { quantity } = req.body;
+
+    if (!quantity || quantity <= 0) {
+      return res.status(400).json({ error: "Valid quantity is required" });
+    }
+
+    const result = sellItem(id, quantity);
+    res.json({
+      message: result.soldOut
+        ? "Item sold out and moved to sold items"
+        : "Sale completed successfully",
+      ...result,
+    });
+  } catch (error) {
+    console.error("Error selling item:", error);
+    res.status(500).json({ error: error.message || "Failed to sell item" });
+  }
+});
+
+// Sell multiple items (for cart checkout)
+app.post("/api/sales/checkout", (req, res) => {
+  try {
+    const { items } = req.body;
+
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ error: "Items array is required" });
+    }
+
+    // Validate items format
+    for (const item of items) {
+      if (!item.id || !item.quantity || item.quantity <= 0) {
+        return res
+          .status(400)
+          .json({ error: "Each item must have id and valid quantity" });
+      }
+    }
+
+    const results = sellMultipleItems(
+      items.map((item) => ({ id: item.id, quantity: item.quantity })),
+    );
+    res.json({
+      message: "Sale completed successfully",
+      results,
+    });
+  } catch (error) {
+    console.error("Error processing checkout:", error);
+    res.status(500).json({ error: error.message || "Failed to process sale" });
+  }
+});
+
+// Get all sold items (out of stock list)
+app.get("/api/sold-items", (req, res) => {
+  try {
+    const soldItems = getAllSoldItems();
+    res.json(soldItems);
+  } catch (error) {
+    console.error("Error fetching sold items:", error);
+    res.status(500).json({ error: "Failed to fetch sold items" });
+  }
+});
+
+// Get sold items by original item ID
+app.get("/api/sold-items/item/:id", (req, res) => {
+  try {
+    const soldItems = getSoldItemsByOriginalId(req.params.id);
+    res.json(soldItems);
+  } catch (error) {
+    console.error("Error fetching sold items:", error);
+    res.status(500).json({ error: "Failed to fetch sold items" });
   }
 });
 

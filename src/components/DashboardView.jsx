@@ -10,10 +10,12 @@ const DashboardView = () => {
     uniqueParts: 0,
     totalQuantity: 0,
   });
+  const [recentActivity, setRecentActivity] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchDashboardData();
+    fetchRecentActivity();
   }, []);
 
   const fetchDashboardData = async () => {
@@ -45,6 +47,34 @@ const DashboardView = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchRecentActivity = async () => {
+    try {
+      const response = await fetch(`${API_URL}/sold-items`);
+      if (!response.ok) throw new Error("Failed to fetch activity");
+      const data = await response.json();
+      // Get the 10 most recent sales
+      setRecentActivity(data.slice(0, 10));
+    } catch (err) {
+      console.error("Error fetching recent activity:", err);
+    }
+  };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins} min${diffMins > 1 ? "s" : ""} ago`;
+    if (diffHours < 24)
+      return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
+    return date.toLocaleDateString();
   };
 
   return (
@@ -154,7 +184,61 @@ const DashboardView = () => {
         <div className="recent-activity">
           <h2>Recent Activity</h2>
           <div className="activity-list">
-            <p className="empty-message">No recent activity</p>
+            {recentActivity.length === 0 ? (
+              <p className="empty-message">No recent activity</p>
+            ) : (
+              <ul className="activity-items">
+                {recentActivity.map((sale) => (
+                  <li key={sale.id} className="activity-item">
+                    <div className="activity-icon">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <circle
+                          cx="9"
+                          cy="21"
+                          r="1"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        <circle
+                          cx="20"
+                          cy="21"
+                          r="1"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        <path
+                          d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </div>
+                    <div className="activity-details">
+                      <div className="activity-main">
+                        <span className="activity-name">{sale.name}</span>
+                        {sale.partNumber && (
+                          <span className="activity-part">
+                            #{sale.partNumber}
+                          </span>
+                        )}
+                      </div>
+                      <div className="activity-meta">
+                        <span className="activity-quantity">
+                          Sold {sale.quantity_sold} unit
+                          {sale.quantity_sold > 1 ? "s" : ""}
+                        </span>
+                        <span className="activity-time">
+                          {formatDate(sale.sale_date)}
+                        </span>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
       </div>
