@@ -8,6 +8,13 @@ import {
   getItemById,
 } from "./db.js";
 
+process.on("uncaughtException", (err) => {
+  console.error("UNCAUGHT EXCEPTION:", err);
+});
+process.on("unhandledRejection", (err) => {
+  console.error("UNHANDLED REJECTION:", err);
+});
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -124,7 +131,13 @@ app.delete("/api/items/:id", (req, res) => {
 
 // Health check
 app.get("/api/health", (req, res) => {
-  res.json({ status: "ok" });
+  try {
+    const items = getAllItems();
+    res.json({ status: "ok", itemCount: items.length });
+  } catch (error) {
+    console.error("Health check DB error:", error);
+    res.status(500).json({ status: "error", message: error.message });
+  }
 });
 
 app.listen(PORT, "0.0.0.0", () => {
