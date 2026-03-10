@@ -1,5 +1,9 @@
 [build]
 builder = "NIXPACKS"
+buildCommand = "npm install --build-from-source && npm run build"
+
+[build.nixpacksPlan.phases.setup]
+nixPkgs = ["python3", "gcc", "gnumake"]
 
 [deploy]
 startCommand = "node server/index.js"
