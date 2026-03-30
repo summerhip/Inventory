@@ -214,6 +214,10 @@ const SalesView = () => {
   );
 
   const cartTotal = cart.reduce((sum, item) => sum + item.saleQuantity, 0);
+  const cartValue = cart.reduce(
+    (sum, item) => sum + (item.price || 0) * (Number(item.saleQuantity) || 0),
+    0,
+  );
 
   return (
     <div className="sales-view">
@@ -267,6 +271,11 @@ const SalesView = () => {
                       {item.description && (
                         <p className="description">{item.description}</p>
                       )}
+                      <p className="price">
+                        {item.price
+                          ? `$${Number(item.price).toFixed(2)}`
+                          : "No price"}
+                      </p>
                       <p className="stock">
                         <span className={item.quantity < 10 ? "low-stock" : ""}>
                           {item.quantity} in stock
@@ -318,6 +327,19 @@ const SalesView = () => {
                           </p>
                         )}
                         <p className="available">{item.quantity} available</p>
+                        {item.price ? (
+                          <p className="line-total">
+                            ${Number(item.price).toFixed(2)} ×{" "}
+                            {Number(item.saleQuantity) || 0} ={" "}
+                            <strong>
+                              $
+                              {(
+                                (item.price || 0) *
+                                (Number(item.saleQuantity) || 0)
+                              ).toFixed(2)}
+                            </strong>
+                          </p>
+                        ) : null}
                       </div>
                       <div className="cart-item-actions">
                         <div className="quantity-control">
@@ -391,6 +413,12 @@ const SalesView = () => {
                 </div>
 
                 <div className="cart-actions">
+                  {cartValue > 0 && (
+                    <div className="cart-total">
+                      <span>Total</span>
+                      <span>${cartValue.toFixed(2)}</span>
+                    </div>
+                  )}
                   <button
                     onClick={clearCart}
                     className="btn-secondary"

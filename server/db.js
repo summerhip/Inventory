@@ -16,6 +16,7 @@ db.exec(`
     partNumber TEXT,
     description TEXT,
     category TEXT,
+    price REAL DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )
@@ -31,6 +32,7 @@ db.exec(`
     description TEXT,
     category TEXT,
     quantity_sold INTEGER NOT NULL,
+    price_per_unit REAL DEFAULT 0,
     sale_date DATETIME DEFAULT CURRENT_TIMESTAMP
   )
 `);
@@ -57,6 +59,30 @@ if (!columnNames.includes("description")) {
   }
 }
 
+if (!columnNames.includes("price")) {
+  try {
+    db.exec(`ALTER TABLE items ADD COLUMN price REAL DEFAULT 0`);
+    console.log("Added price column to items table");
+  } catch (e) {
+    console.error("Failed to add price column to items:", e.message);
+  }
+}
+
+const soldItemsInfo = db.prepare("PRAGMA table_info(sold_items)").all();
+const soldItemsColumns = soldItemsInfo.map((col) => col.name);
+
+if (!soldItemsColumns.includes("price_per_unit")) {
+  try {
+    db.exec(`ALTER TABLE sold_items ADD COLUMN price_per_unit REAL DEFAULT 0`);
+    console.log("Added price_per_unit column to sold_items table");
+  } catch (e) {
+    console.error(
+      "Failed to add price_per_unit column to sold_items:",
+      e.message,
+    );
+  }
+}
+
 export const getAllItems = () => {
   const stmt = db.prepare("SELECT * FROM items ORDER BY created_at DESC");
   return stmt.all();
@@ -73,9 +99,10 @@ export const createItem = (
   partNumber,
   description,
   category,
+  price,
 ) => {
   const stmt = db.prepare(
-    "INSERT INTO items (name, quantity, partNumber, description, category) VALUES (?, ?, ?, ?, ?)",
+    "INSERT INTO items (name, quantity, partNumber, description, category, price) VALUES (?, ?, ?, ?, ?, ?)",
   );
   const result = stmt.run(
     name,
@@ -83,6 +110,7 @@ export const createItem = (
     partNumber || null,
     description || null,
     category || null,
+    price || 0,
   );
   return getItemById(result.lastInsertRowid);
 };
@@ -94,9 +122,10 @@ export const updateItem = (
   partNumber,
   description,
   category,
+  price,
 ) => {
   const stmt = db.prepare(
-    "UPDATE items SET name = ?, quantity = ?, partNumber = ?, description = ?, category = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+    "UPDATE items SET name = ?, quantity = ?, partNumber = ?, description = ?, category = ?, price = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
   );
   stmt.run(
     name,
@@ -104,6 +133,7 @@ export const updateItem = (
     partNumber || null,
     description || null,
     category || null,
+    price || 0,
     id,
   );
   return getItemById(id);
@@ -128,7 +158,7 @@ export const sellItem = (id, quantitySold) => {
 
   // Record the sale
   const recordStmt = db.prepare(
-    "INSERT INTO sold_items (original_item_id, name, partNumber, description, category, quantity_sold) VALUES (?, ?, ?, ?, ?, ?)",
+    "INSERT INTO sold_items (original_item_id, name, partNumber, description, category, quantity_sold, price_per_unit) VALUES (?, ?, ?, ?, ?, ?, ?)",
   );
   recordStmt.run(
     id,
@@ -137,6 +167,7 @@ export const sellItem = (id, quantitySold) => {
     item.description || null,
     item.category || null,
     quantitySold,
+    item.price || 0,
   );
 
   // If all stock is sold, delete from items

@@ -66,7 +66,8 @@ app.get("/api/items/:id", (req, res) => {
 // Create new item
 app.post("/api/items", (req, res) => {
   try {
-    const { name, quantity, partNumber, description, category } = req.body;
+    const { name, quantity, partNumber, description, category, price } =
+      req.body;
 
     if (!name || quantity === undefined) {
       return res.status(400).json({ error: "Name and quantity are required" });
@@ -78,6 +79,7 @@ app.post("/api/items", (req, res) => {
       partNumber,
       description,
       category,
+      price,
     );
     res.status(201).json(newItem);
   } catch (error) {
@@ -89,7 +91,8 @@ app.post("/api/items", (req, res) => {
 // Update item
 app.put("/api/items/:id", (req, res) => {
   try {
-    const { name, quantity, partNumber, description, category } = req.body;
+    const { name, quantity, partNumber, description, category, price } =
+      req.body;
     const { id } = req.params;
 
     if (!name || quantity === undefined) {
@@ -108,6 +111,7 @@ app.put("/api/items/:id", (req, res) => {
       partNumber,
       description,
       category,
+      price,
     );
     res.json(updatedItem);
   } catch (error) {

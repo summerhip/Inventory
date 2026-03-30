@@ -14,6 +14,7 @@ const InventoryView = () => {
     partNumber: "",
     description: "",
     stock: "",
+    price: "",
   });
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -107,6 +108,7 @@ const InventoryView = () => {
             partNumber: formData.partNumber,
             description: formData.description,
             quantity: Number(formData.stock),
+            price: formData.price !== "" ? Number(formData.price) : 0,
           }),
         });
 
@@ -126,6 +128,7 @@ const InventoryView = () => {
             partNumber: formData.partNumber,
             description: formData.description,
             quantity: Number(formData.stock),
+            price: formData.price !== "" ? Number(formData.price) : 0,
           }),
         });
 
@@ -136,7 +139,13 @@ const InventoryView = () => {
       }
 
       // Reset form and clear selection
-      setFormData({ name: "", partNumber: "", description: "", stock: "" });
+      setFormData({
+        name: "",
+        partNumber: "",
+        description: "",
+        stock: "",
+        price: "",
+      });
       setEditingId(null);
       setIsDialogOpen(false);
       setSelectedRows([]);
@@ -166,7 +175,13 @@ const InventoryView = () => {
 
   const handleCancelEdit = () => {
     setEditingId(null);
-    setFormData({ name: "", partNumber: "", description: "", stock: "" });
+    setFormData({
+      name: "",
+      partNumber: "",
+      description: "",
+      stock: "",
+      price: "",
+    });
     setIsDialogOpen(false);
   };
 
@@ -188,6 +203,7 @@ const InventoryView = () => {
       partNumber: item.partNumber || "",
       description: item.description || "",
       stock: item.quantity.toString(),
+      price: item.price != null ? item.price.toString() : "",
     });
     setIsDialogOpen(true);
   };
@@ -295,6 +311,14 @@ const InventoryView = () => {
       headerName: "Stock",
       flex: 1,
       minWidth: 100,
+    },
+    {
+      field: "price",
+      headerName: "Price",
+      flex: 1,
+      minWidth: 100,
+      valueFormatter: (params) =>
+        params.value != null ? `$${Number(params.value).toFixed(2)}` : "-",
     },
   ];
 

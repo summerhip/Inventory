@@ -59,6 +59,18 @@ const NewItemDialog = ({
               />
             </div>
             <div className="form-group">
+              <label>Price</label>
+              <input
+                type="number"
+                name="price"
+                placeholder="0.00"
+                value={formData.price}
+                onChange={onInputChange}
+                min="0"
+                step="0.01"
+              />
+            </div>
+            <div className="form-group">
               <label>Stock</label>
               <input
                 type="number"

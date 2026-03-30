@@ -7,10 +7,13 @@ const DashboardView = () => {
   const [stats, setStats] = useState({
     totalItems: 0,
     lowStock: 0,
-    uniqueParts: 0,
+    totalSales: 0,
     totalQuantity: 0,
+    inventoryValue: 0,
   });
   const [recentActivity, setRecentActivity] = useState([]);
+  const [salesByDay, setSalesByDay] = useState([]);
+  const [topItems, setTopItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -28,20 +31,23 @@ const DashboardView = () => {
       // Calculate statistics
       const totalItems = data.length;
       const lowStock = data.filter((item) => item.quantity < 10).length;
-      const uniqueParts = new Set(
-        data.map((item) => item.partNumber).filter((pn) => pn),
-      ).size;
       const totalQuantity = data.reduce(
         (sum, item) => sum + (item.quantity || 0),
         0,
       );
 
-      setStats({
+      const inventoryValue = data.reduce(
+        (sum, item) => sum + (item.price || 0) * (item.quantity || 0),
+        0,
+      );
+
+      setStats((prev) => ({
+        ...prev,
         totalItems,
         lowStock,
-        uniqueParts,
         totalQuantity,
-      });
+        inventoryValue,
+      }));
     } catch (err) {
       console.error("Error fetching dashboard data:", err);
     } finally {
@@ -54,6 +60,60 @@ const DashboardView = () => {
       const response = await fetch(`${API_URL}/sold-items`);
       if (!response.ok) throw new Error("Failed to fetch activity");
       const data = await response.json();
+      const totalSales = data.reduce(
+        (sum, s) => sum + (s.price_per_unit || 0) * (s.quantity_sold || 0),
+        0,
+      );
+      setStats((prev) => ({ ...prev, totalSales }));
+
+      // Sales by day — last 7 days
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      setSalesByDay(
+        Array.from({ length: 7 }, (_, i) => {
+          const day = new Date(today);
+          day.setDate(day.getDate() - (6 - i));
+          const nextDay = new Date(day);
+          nextDay.setDate(nextDay.getDate() + 1);
+          const revenue = data
+            .filter((s) => {
+              const sd = new Date(s.sale_date);
+              return sd >= day && sd < nextDay;
+            })
+            .reduce(
+              (sum, s) =>
+                sum + (s.price_per_unit || 0) * (s.quantity_sold || 0),
+              0,
+            );
+          return {
+            label: day.toLocaleDateString(undefined, { weekday: "short" }),
+            revenue,
+          };
+        }),
+      );
+
+      // Top items by revenue
+      const itemMap = {};
+      data.forEach((s) => {
+        const key = s.name;
+        if (!itemMap[key]) {
+          itemMap[key] = {
+            name: s.name,
+            partNumber: s.partNumber,
+            unitsSold: 0,
+            revenue: 0,
+          };
+        }
+        itemMap[key].unitsSold += s.quantity_sold || 0;
+        itemMap[key].revenue +=
+          (s.price_per_unit || 0) * (s.quantity_sold || 0);
+      });
+      setTopItems(
+        Object.values(itemMap)
+          .sort((a, b) => b.revenue - a.revenue)
+          .slice(0, 5),
+      );
+
       // Get the 10 most recent sales
       setRecentActivity(data.slice(0, 10));
     } catch (err) {
@@ -76,6 +136,8 @@ const DashboardView = () => {
     if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
     return date.toLocaleDateString();
   };
+
+  const maxDayRevenue = Math.max(...salesByDay.map((d) => d.revenue), 0.01);
 
   return (
     <div className="dashboard-view">
@@ -140,10 +202,26 @@ const DashboardView = () => {
 
           <div className="dashboard-card">
             <div className="card-header">
-              <h3>Unique Parts</h3>
+              <h3>Total Sales</h3>
               <svg viewBox="0 0 24 24" fill="none">
+                <circle
+                  cx="9"
+                  cy="21"
+                  r="1"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <circle
+                  cx="20"
+                  cy="21"
+                  r="1"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
                 <path
-                  d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"
+                  d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -151,9 +229,11 @@ const DashboardView = () => {
               </svg>
             </div>
             <div className="card-value">
-              {loading ? "..." : stats.uniqueParts}
+              {loading
+                ? "..."
+                : `$${stats.totalSales.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
             </div>
-            <div className="card-footer">Part numbers</div>
+            <div className="card-footer">Revenue from sales</div>
           </div>
 
           <div className="dashboard-card">
@@ -178,6 +258,113 @@ const DashboardView = () => {
               {loading ? "..." : stats.totalQuantity.toLocaleString()}
             </div>
             <div className="card-footer">Units in stock</div>
+          </div>
+
+          <div className="dashboard-card">
+            <div className="card-header">
+              <h3>Inventory Value</h3>
+              <svg viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" strokeWidth="2" />
+                <path
+                  d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M12 6v2M12 16v2"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </div>
+            <div className="card-value">
+              {loading
+                ? "..."
+                : `$${stats.inventoryValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+            </div>
+            <div className="card-footer">Current stock value</div>
+          </div>
+        </div>
+
+        <div className="dashboard-insights">
+          <div className="insights-card">
+            <h2>Revenue — Last 7 Days</h2>
+            <svg viewBox="0 0 560 175" className="sales-chart">
+              <line
+                x1={0}
+                y1={140}
+                x2={560}
+                y2={140}
+                className="chart-baseline"
+              />
+              {salesByDay.map((day, i) => {
+                const barHeight = (day.revenue / maxDayRevenue) * 120;
+                const x = i * 80 + 15;
+                const y = 140 - barHeight;
+                return (
+                  <g key={i}>
+                    <rect
+                      x={x}
+                      y={barHeight > 0 ? y : 138}
+                      width={50}
+                      height={barHeight > 0 ? barHeight : 2}
+                      rx={4}
+                      className="chart-bar"
+                    />
+                    <text
+                      x={x + 25}
+                      y={158}
+                      textAnchor="middle"
+                      className="chart-label"
+                    >
+                      {day.label}
+                    </text>
+                    {day.revenue > 0 && (
+                      <text
+                        x={x + 25}
+                        y={y - 5}
+                        textAnchor="middle"
+                        className="chart-value"
+                      >
+                        ${day.revenue.toFixed(0)}
+                      </text>
+                    )}
+                  </g>
+                );
+              })}
+            </svg>
+          </div>
+
+          <div className="insights-card">
+            <h2>Top Selling Items</h2>
+            {topItems.length === 0 ? (
+              <p className="empty-message">No sales data yet</p>
+            ) : (
+              <div className="top-items-list">
+                {topItems.map((item, i) => (
+                  <div key={item.name} className="top-item">
+                    <span className="top-item-rank">#{i + 1}</span>
+                    <div className="top-item-info">
+                      <span className="top-item-name">{item.name}</span>
+                      {item.partNumber && (
+                        <span className="top-item-part">
+                          #{item.partNumber}
+                        </span>
+                      )}
+                    </div>
+                    <div className="top-item-stats">
+                      <span className="top-item-units">
+                        {item.unitsSold} units
+                      </span>
+                      <span className="top-item-revenue">
+                        ${item.revenue.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
